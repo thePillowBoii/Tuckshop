@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+
+{% block title %}Login Page{% endblock %}
+
+{% block content %}
+  <div>
+  <h1>Login Page</h1>
+  <div class="container mt-4">
+    <form action="/login" method="post">
+      <div class="mb-3">
+        <label for="userID" class="form-label">Login</label>
+        <input type="text" class="form-control" id="userID" name="userID" placeholder="Enter your userID">
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password">
+      </div>
+      <button type="submit" class="btn btn-primary">Log in</button>
+    </form>
+  </div>
+
+{% endblock %}

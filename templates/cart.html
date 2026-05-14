@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Cart{% endblock %}
+{% block content %}
+
+<h1>Your Cart</h1>
+<div class="mb-3"></div>
+
+{% if items %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Item</th>
+      <th>Option</th>
+      <th>Qty</th>
+      <th>Price</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.Name }}</td>
+      <td>{{ item.OptionName if item.OptionName else '—' }}</td>
+      <td>{{ item.Quantity }}</td>
+      <td>${{ '%.2f' % (item.Price * item.Quantity) }}</td>
+      <td>
+        <form method="post" action="/remove_from_cart/{{ item.rowid }}">
+          <button class="btn btn-sm btn-clear">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3"><strong>Total</strong></td>
+      <td><strong>${{ '%.2f' % total }}</strong></td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
+
+<div class="d-flex justify-content-between mt-3 mb-4">
+  <form method="post" action="/clear_cart">
+    <button class="btn btn-clear">Clear Cart</button>
+  </form>
+  <a href="/products" class="btn btn-clear">Continue Shopping</a>
+</div>
+
+<!-- Order details -->
+<div class="card p-4 mb-4">
+  <h5 class="mb-3">Order Details</h5>
+  <div class="mb-3">
+    <label for="orderDate" class="form-label">Select Date</label>
+    <input type="date" id="orderDate" class="form-control" style="max-width: 250px;">
+    <small id="dateError" class="text-danger" style="display:none;">Please select a weekday.</small>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Order Type</label>
+    <div class="d-flex gap-3">
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="orderType" id="morningTea" value="Morning Tea">
+        <label class="form-check-label" for="morningTea">Morning Tea</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="orderType" id="lunch" value="Lunch" checked>
+        <label class="form-check-label" for="lunch">Lunch</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex justify-content-end">
+  <button class="btn btn-primary" id="checkoutBtn">Checkout</button>
+</div>
+
+<script>
+  // Set minimum date to today and block weekends
+  const dateInput = document.getElementById('orderDate');
+  const dateError = document.getElementById('dateError');
+
+  // Set min to today
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  dateInput.min = `${yyyy}-${mm}-${dd}`;
+
+  dateInput.addEventListener('change', () => {
+    const selected = new Date(dateInput.value + 'T00:00:00');
+    const day = selected.getDay();
+    if (day === 0 || day === 6) {
+      dateError.style.display = 'block';
+      dateInput.value = '';
+    } else {
+      dateError.style.display = 'none';
+    }
+  });
+
+  document.getElementById('checkoutBtn').addEventListener('click', () => {
+    const date = dateInput.value;
+    const orderType = document.querySelector('input[name="orderType"]:checked');
+    if (!date) {
+      dateError.textContent = 'Please select a date.';
+      dateError.style.display = 'block';
+      return;
+    }
+    if (!orderType) {
+      alert('Please select Morning Tea or Lunch.');
+      return;
+    }
+    // Proceed with checkout
+    alert('Order placed for ' + orderType.value + ' on ' + date);
+  });
+</script>
+
+{% else %}
+<p>Your cart is empty.</p>
+<a href="/products" class="btn btn-primary">Browse Menu</a>
+{% endif %}
+
+{% endblock %}

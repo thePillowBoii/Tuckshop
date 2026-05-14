@@ -1,0 +1,220 @@
+body {
+  padding-top: 60px;
+  background-color: white;
+  color: #3A2F8F;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #3A2F8F !important;
+}
+
+p, span, label, li, td, th, small, strong, em {
+  color: #3A2F8F;
+}
+
+.text-muted, .text-secondary, .text-dark, .text-body {
+  color: #3A2F8F !important;
+}
+
+input, textarea, select {
+  color: #3A2F8F !important;
+}
+
+.modal-backdrop {
+  display: none !important;
+}
+
+.modal {
+  left: calc(12.5% + 200px);
+  width: calc(87.5% - 200px - 12.5%);
+  top: 60px;
+  bottom: 0;
+  right: auto;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+body.modal-open {
+  padding-right: 0 !important;
+  overflow-y: scroll !important;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to right,
+    rgb(245, 233, 233) 12.5%,
+    transparent 12.5%,
+    transparent 87.5%,
+    rgb(245, 233, 233) 87.5%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+.page-header {
+  position: fixed;
+  top: 0;
+  left: 11.75%;
+  right: 12.5%;
+  z-index: 200;
+}
+
+.page-header .container {
+  background-color: #fd8a82 !important;
+  width: 100%;
+  max-width: 100%;
+  padding-left: 0.75rem;
+  padding-right: 0;
+}
+
+.page-header h1 {
+  font-weight: bold;
+  padding-left: 0.25rem;
+  font-size: 1.75rem;
+}
+
+.sidebar-fixed-wrapper {
+  position: fixed;
+  top: 60px;
+  left: 12.5%;
+  bottom: 0;
+  width: 16.666%;
+  z-index: 100;
+}
+.sidebar-fixed-wrapper .container,
+.sidebar-fixed-wrapper .row,
+.sidebar-fixed-wrapper .col-12.col-md-2 {
+  height: 100%;
+}
+.sidebar {
+  width: 500%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #FBA39C !important;
+}
+
+.content-with-sidebar {
+  position: relative;
+  margin-left: calc(12.5% + 16.666%);
+  margin-right: 12.5%;
+  padding: 1rem;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+@media (max-width: 767.98px) {
+  body { padding-top: 0; }
+  body::before { display: none; }
+  .page-header {
+    position: static;
+    left: auto;
+    right: auto;
+  }
+  .sidebar-fixed-wrapper {
+    position: static;
+    width: 100%;
+  }
+  .sidebar { width: 100%; height: auto; }
+  .content-with-sidebar {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+.btn {
+  background-color: #3A2F8F !important;
+  border-color: #3A2F8F !important;
+  color: white !important;
+}
+
+.btn:hover {
+  background-color: #2e2572 !important;
+  border-color: #2e2572 !important;
+}
+
+.btn-category {
+  background-color: #92BFE1 !important;
+  border-color: #92BFE1 !important;
+  color: #3A2F8F !important;
+}
+
+.btn-category:hover {
+  background-color: #7aafd4 !important;
+  border-color: #7aafd4 !important;
+  color: #3A2F8F !important;
+}
+
+.btn-category.active {
+  background-color: #3A2F8F !important;
+  border-color: #3A2F8F !important;
+  color: white !important;
+}
+
+.btn-category.active:hover {
+  background-color: #2e2572 !important;
+  border-color: #2e2572 !important;
+  color: white !important;
+}
+
+.sidebar .btn-primary,
+.sidebar .btn-primary:hover,
+.sidebar .btn-primary:focus,
+.sidebar .btn-primary:active {
+  background-color: #3A2F8F !important;
+  border-color: #3A2F8F !important;
+  color: white !important;
+}
+
+.sidebar .nav-link {
+  color: #3A2F8F !important;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.sidebar .nav-link.active {
+  background-color: #3A2F8F !important;
+  color: white !important;
+}
+
+.sidebar .nav-link:hover {
+  background-color: #2e2572 !important;
+  color: white !important;
+}
+
+.btn-clear {
+  background-color: #92BFE1 !important;
+  color: #3A2F8F !important;
+  border-color: #92BFE1 !important;
+}
+
+.btn-clear:hover {
+  background-color: #7aafd4 !important;
+  color: #3A2F8F !important;
+  border-color: #7aafd4 !important;
+}
+
+.content-with-sidebar {
+  margin-left: calc(12.5% + 16.666%);
+  margin-right: 14.5%;
+  padding: 1rem;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+/* Allow the main container to go full width of the white block */
+.container {
+  max-width: 100% !important;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.search-form,
+.search-form input,
+.search-form button { z-index: 1; }
+
+.products-row { z-index: -1; }
