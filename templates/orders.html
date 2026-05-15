@@ -7,34 +7,39 @@
 
 {% if orders %}
   {% for order_id, order in orders.items() %}
-  <div class="card mb-4 p-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <div>
-        <h5 class="mb-0">Order #{{ order_id }}</h5>
-        <small>{{ order.date }} — {{ order.order_type }}</small>
-      </div>
-      <strong>${{ '%.2f' % order.total }}</strong>
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #fd8a82;">
+      <span style="color: white;"><strong>Order #{{ order_id }}</strong></span>
+      <span style="color: white;">{{ order['date'] }} — {{ order['order_type'] }}</span>
     </div>
-    <table class="table table-sm mb-0">
-      <thead>
-        <tr>
-          <th>Item</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in order.items %}
-        <tr>
-          <td>{{ item.name }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>${{ '%.2f' % item.item_price }}</td>
-          <td>${{ '%.2f' % item.line_total }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order['items'] %}
+          <tr>
+            <td>{{ item['name'] }}</td>
+            <td>{{ item['quantity'] }}</td>
+            <td>${{ '%.2f' % item['item_price'] }}</td>
+            <td>${{ '%.2f' % item['line_total'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>Order Total</strong></td>
+            <td><strong>${{ '%.2f' % order['total'] }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
   {% endfor %}
 

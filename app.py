@@ -204,7 +204,7 @@ def checkout():
     cur = con.cursor()
 
     # Get all cart items
-    cur.execute('SELECT * FROM Cart')
+    cur.execute('SELECT Item, Quantity, Price FROM Cart')
     cart_items = cur.fetchall()
 
     # Get next OrderID
@@ -216,7 +216,7 @@ def checkout():
     for item in cart_items:
         cur.execute('''
             INSERT INTO Orders (OrderID, User, Date, Price, Item, Quantity, ItemPrice, OrderType)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             next_order_id,
             user_id,
@@ -225,8 +225,7 @@ def checkout():
             item['Item'],
             item['Quantity'],
             item['Price'],
-            order_type,
-            order_date
+            order_type
         ))
 
     # Clear the cart
@@ -235,7 +234,7 @@ def checkout():
     con.commit()
     con.close()
 
-    return redirect('/cart')
+    return redirect('/orders')
 
 @app.route('/orders')
 def orders():
@@ -254,27 +253,25 @@ def orders():
     rows = cur.fetchall()
     con.close()
 
-    # Group rows by OrderID
-    from collections import OrderedDict
-    grouped = OrderedDict()
+    orders_dict = {}
     for row in rows:
         oid = row['OrderID']
-        if oid not in grouped:
-            grouped[oid] = {
+        if oid not in orders_dict:
+            orders_dict[oid] = {
                 'date': row['Date'],
                 'order_type': row['OrderType'],
                 'items': [],
                 'total': 0.0
             }
-        grouped[oid]['items'].append({
+        orders_dict[oid]['items'].append({
             'name': row['Name'],
             'quantity': row['Quantity'],
-            'item_price': row['ItemPrice'],
-            'line_total': row['Price']
+            'item_price': float(row['ItemPrice']),
+            'line_total': float(row['Price'])
         })
-        grouped[oid]['total'] += row['Price']
+        orders_dict[oid]['total'] = round(orders_dict[oid]['total'] + float(row['Price']), 2)
 
-    return render_template('orders.html', orders=grouped)
+    return render_template('orders.html', orders=orders_dict)
 
 @app.route('/register')
 def register():
