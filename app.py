@@ -204,19 +204,30 @@ def checkout():
     cur = con.cursor()
 
     # Get all cart items
-    cur.execute('SELECT Item, Quantity, Price FROM Cart')
+    cur.execute('SELECT * FROM Cart')
     cart_items = cur.fetchall()
 
-    # Get total price
-    cur.execute('SELECT SUM(Price * Quantity) FROM Cart')
-    total = cur.fetchone()[0] or 0.0
+    # Get next OrderID
+    cur.execute('SELECT MAX(OrderID) FROM Orders')
+    result = cur.fetchone()[0]
+    next_order_id = (result + 1) if result else 1
 
-    # Insert one Orders row per cart item
+    # Insert one order row per cart item, all with the same OrderID
     for item in cart_items:
         cur.execute('''
-            INSERT INTO Orders (User, Date, TotalPrice, Item, Quantity, ItemPrice)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (user_id, order_date, round(total, 2), item['Item'], item['Quantity'], item['Price']))
+            INSERT INTO Orders (OrderID, User, Date, Price, Item, Quantity, ItemPrice, OrderType)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            next_order_id,
+            user_id,
+            order_date,
+            round(item['Price'] * item['Quantity'], 2),
+            item['Item'],
+            item['Quantity'],
+            item['Price'],
+            order_type,
+            order_date
+        ))
 
     # Clear the cart
     cur.execute('DELETE FROM Cart')
@@ -225,6 +236,45 @@ def checkout():
     con.close()
 
     return redirect('/cart')
+
+@app.route('/orders')
+def orders():
+    user_id = session.get('userID')
+    con = sqlite3.connect("Tuckshop.db")
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('''
+        SELECT Orders.OrderID, Orders.Date, Orders.OrderType, Orders.Quantity,
+               Orders.ItemPrice, Orders.Price, Menu.Name
+        FROM Orders
+        JOIN Menu ON Orders.Item = Menu.ItemID
+        WHERE Orders.User = ?
+        ORDER BY Orders.OrderID DESC, Menu.Name
+    ''', (user_id,))
+    rows = cur.fetchall()
+    con.close()
+
+    # Group rows by OrderID
+    from collections import OrderedDict
+    grouped = OrderedDict()
+    for row in rows:
+        oid = row['OrderID']
+        if oid not in grouped:
+            grouped[oid] = {
+                'date': row['Date'],
+                'order_type': row['OrderType'],
+                'items': [],
+                'total': 0.0
+            }
+        grouped[oid]['items'].append({
+            'name': row['Name'],
+            'quantity': row['Quantity'],
+            'item_price': row['ItemPrice'],
+            'line_total': row['Price']
+        })
+        grouped[oid]['total'] += row['Price']
+
+    return render_template('orders.html', orders=grouped)
 
 @app.route('/register')
 def register():

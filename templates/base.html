@@ -24,6 +24,7 @@
             <ul class="nav nav-pills flex-column">
               <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'products' or request.endpoint == 'search' }}" href="/products">Menu</a></li>
               <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'cart' }}" href="/cart">Cart</a></li>
+              <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'orders' }}" href="/orders">Past Orders</a></li>
               {% if session.get('username') %}
               <li class="nav-item"><a class="nav-link" href="/signout">Sign Out</a></li>
               {% endif %}

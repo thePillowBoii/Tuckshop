@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Past Orders{% endblock %}
+{% block content %}
+
+<h1>Past Orders</h1>
+<div class="mb-3"></div>
+
+{% if orders %}
+  {% for order_id, order in orders.items() %}
+  <div class="card mb-4 p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h5 class="mb-0">Order #{{ order_id }}</h5>
+        <small>{{ order.date }} — {{ order.order_type }}</small>
+      </div>
+      <strong>${{ '%.2f' % order.total }}</strong>
+    </div>
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in order.items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ '%.2f' % item.item_price }}</td>
+          <td>${{ '%.2f' % item.line_total }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+{% else %}
+<p>You have no past orders.</p>
+<a href="/products" class="btn btn-primary">Browse Menu</a>
+{% endif %}
+
+{% endblock %}
