@@ -188,12 +188,43 @@ def get_options(item_id):
         })
     return jsonify(grouped)
 
-
 @app.route('/signout', methods=['POST', 'GET'])
 def signout():
     session.pop('userID', None)
     return redirect('/')
 
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    order_date = request.form.get('orderDate')
+    order_type = request.form.get('orderType')
+    user_id = session.get('userID')
+
+    con = sqlite3.connect("Tuckshop.db")
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    # Get all cart items
+    cur.execute('SELECT Item, Quantity, Price FROM Cart')
+    cart_items = cur.fetchall()
+
+    # Get total price
+    cur.execute('SELECT SUM(Price * Quantity) FROM Cart')
+    total = cur.fetchone()[0] or 0.0
+
+    # Insert one Orders row per cart item
+    for item in cart_items:
+        cur.execute('''
+            INSERT INTO Orders (User, Date, TotalPrice, Item, Quantity, ItemPrice)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (user_id, order_date, round(total, 2), item['Item'], item['Quantity'], item['Price']))
+
+    # Clear the cart
+    cur.execute('DELETE FROM Cart')
+
+    con.commit()
+    con.close()
+
+    return redirect('/cart')
 
 @app.route('/register')
 def register():

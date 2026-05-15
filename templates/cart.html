@@ -70,16 +70,18 @@
   </div>
 </div>
 
-<div class="d-flex justify-content-end">
-  <button class="btn btn-primary" id="checkoutBtn">Checkout</button>
-</div>
+<form method="post" action="/checkout" id="checkoutForm">
+  <input type="hidden" name="orderDate" id="hiddenDate">
+  <input type="hidden" name="orderType" id="hiddenType">
+  <div class="d-flex justify-content-end">
+    <button type="submit" class="btn btn-primary" id="checkoutBtn">Checkout</button>
+  </div>
+</form>
 
 <script>
-  // Set minimum date to today and block weekends
   const dateInput = document.getElementById('orderDate');
   const dateError = document.getElementById('dateError');
 
-  // Set min to today
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -90,6 +92,7 @@
     const selected = new Date(dateInput.value + 'T00:00:00');
     const day = selected.getDay();
     if (day === 0 || day === 6) {
+      dateError.textContent = 'Please select a weekday.';
       dateError.style.display = 'block';
       dateInput.value = '';
     } else {
@@ -97,9 +100,11 @@
     }
   });
 
-  document.getElementById('checkoutBtn').addEventListener('click', () => {
+  document.getElementById('checkoutBtn').addEventListener('click', (e) => {
+    e.preventDefault();
     const date = dateInput.value;
     const orderType = document.querySelector('input[name="orderType"]:checked');
+
     if (!date) {
       dateError.textContent = 'Please select a date.';
       dateError.style.display = 'block';
@@ -109,8 +114,10 @@
       alert('Please select Morning Tea or Lunch.');
       return;
     }
-    // Proceed with checkout
-    alert('Order placed for ' + orderType.value + ' on ' + date);
+
+    document.getElementById('hiddenDate').value = date;
+    document.getElementById('hiddenType').value = orderType.value;
+    document.getElementById('checkoutForm').submit();
   });
 </script>
 
