@@ -18,6 +18,15 @@
     <a href="/products" class="btn btn-sm btn-category {{ 'active' if not active_category }}">All</a>
   </div>
 
+  <!-- Dietary filter buttons -->
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="/dietary/Vegan"       class="btn btn-sm btn-dietary {{ 'active' if active_dietary == 'Vegan' }}">V Vegan</a>
+    <a href="/dietary/Vegetarian"  class="btn btn-sm btn-dietary {{ 'active' if active_dietary == 'Vegetarian' }}">VG Vegetarian</a>
+    <a href="/dietary/GlutenFree"  class="btn btn-sm btn-dietary {{ 'active' if active_dietary == 'GlutenFree' }}">GF Gluten Free</a>
+    <a href="/dietary/NutFree"     class="btn btn-sm btn-dietary {{ 'active' if active_dietary == 'NutFree' }}">NF Nut Free</a>
+    <a href="/dietary/DairyFree"   class="btn btn-sm btn-dietary {{ 'active' if active_dietary == 'DairyFree' }}">DF Dairy Free</a>
+  </div>
+
   <div class="row row-cols-2 row-cols-md-5 g-3 products-row">
     {% for product in Menu %}
     <div class="col">

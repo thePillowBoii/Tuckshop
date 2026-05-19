@@ -134,9 +134,9 @@ body::before {
   height: 26px;
   border-radius: 50%;
   background-color: #FBA39C;
-  color: white;
+  color: #3A2F8F;
   font-size: 0.6rem;
-  font-weight: bold;
+  font-weight: 900;
   line-height: 1;
 }
 
@@ -148,6 +148,31 @@ body::before {
   flex-wrap: wrap;
   gap: 3px;
   z-index: 10;
+}
+
+.btn-dietary {
+  background-color: #92BFE1;
+  border-color: #92BFE1;
+  color: #3A2F8F;
+  font-weight: 900;
+}
+
+.btn-dietary:hover {
+  background-color: #7aafd4;
+  border-color: #7aafd4;
+  color: #3A2F8F;
+}
+
+.btn-dietary.active {
+  background-color: #3A2F8F;
+  border-color: #3A2F8F;
+  color: white;
+}
+
+.btn-dietary.active:hover {
+  background-color: #2e2572;
+  border-color: #2e2572;
+  color: white;
 }
 
 .card {

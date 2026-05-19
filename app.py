@@ -40,7 +40,8 @@ def products():
     cur.execute('SELECT * FROM Menu')
     data = cur.fetchall()
     con.close()
-    return render_template('products.html', Menu=data, active_category=None)
+    return render_template('products.html', Menu=data, active_category=None, active_dietary=None)
+
 
 
 @app.route('/search', methods=['POST', 'GET'])
@@ -52,7 +53,8 @@ def search():
     cur.execute('SELECT * FROM Menu WHERE Name LIKE ?', ('%' + searchTerm + '%',))
     data = cur.fetchall()
     con.close()
-    return render_template('products.html', Menu=data, active_category=None)
+    return render_template('products.html', Menu=data, active_category=None, active_dietary=None)
+
 
 
 @app.route('/add_to_cart', methods=['POST'])
@@ -154,7 +156,7 @@ def category(category):
     cur.execute('SELECT * FROM Menu WHERE Category = ?', (category,))
     data = cur.fetchall()
     con.close()
-    return render_template('products.html', Menu=data, active_category=category)
+    return render_template('products.html', Menu=data, active_category=category, active_dietary=None)
 
 
 @app.route('/get_categories')
@@ -290,6 +292,23 @@ def get_dietaries():
             'DairyFree': row['DairyFree']
         }
     return jsonify(result)
+
+@app.route('/dietary/<filter>')
+def dietary(filter):
+    valid = ['Vegan', 'Vegetarian', 'GlutenFree', 'NutFree', 'DairyFree']
+    if filter not in valid:
+        return redirect('/products')
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute(f'''
+        SELECT Menu.* FROM Menu
+        JOIN Dietaries ON Menu.ItemID = Dietaries.ItemID
+        WHERE Dietaries.{filter} = 1
+    ''')
+    data = cur.fetchall()
+    con.close()
+    return render_template('products.html', Menu=data, active_category=None, active_dietary=filter)
 
 @app.route('/register')
 def register():
