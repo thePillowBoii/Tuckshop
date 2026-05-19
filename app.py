@@ -43,7 +43,6 @@ def products():
     return render_template('products.html', Menu=data, active_category=None, active_dietary=None)
 
 
-
 @app.route('/search', methods=['POST', 'GET'])
 def search():
     searchTerm = request.form['search_term']
@@ -56,7 +55,6 @@ def search():
     return render_template('products.html', Menu=data, active_category=None, active_dietary=None)
 
 
-
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     try:
@@ -64,6 +62,7 @@ def add_to_cart():
         item_id   = data.get('itemID')
         quantity  = data.get('quantity', 1)
         option_id = data.get('optionID', 0)
+        user_id   = session.get('userID')
 
         con = sqlite3.connect("Tuckshop.db", timeout=10)
         con.row_factory = sqlite3.Row
@@ -93,9 +92,9 @@ def add_to_cart():
         total_price = round(item_price + option_price, 2)
 
         cur.execute('''
-            INSERT INTO Cart (Item, Quantity, Specials, "Option", Price)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (item_id, quantity, special_id, option_id, total_price))
+            INSERT INTO Cart (Item, Quantity, Specials, "Option", Price, UserID)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (item_id, quantity, special_id, option_id, total_price, user_id))
 
         con.commit()
         con.close()
@@ -108,6 +107,7 @@ def add_to_cart():
 
 @app.route('/cart')
 def cart():
+    user_id = session.get('userID')
     con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
@@ -118,13 +118,13 @@ def cart():
         FROM Cart
         JOIN Menu ON Cart.Item = Menu.ItemID
         LEFT JOIN Options ON Cart."Option" = Options.OptionID
-    ''')
+        WHERE Cart.UserID = ?
+    ''', (user_id,))
     items = cur.fetchall()
 
-    cur.execute('SELECT SUM(Price * Quantity) FROM Cart')
+    cur.execute('SELECT SUM(Price * Quantity) FROM Cart WHERE UserID = ?', (user_id,))
     total = cur.fetchone()[0] or 0.0
 
-    user_id = session.get('userID')
     cur.execute('SELECT Balance FROM User WHERE UserID = ?', (user_id,))
     user = cur.fetchone()
     balance = user['Balance'] if user else 0.0
@@ -135,9 +135,10 @@ def cart():
 
 @app.route('/remove_from_cart/<int:rowid>', methods=['POST'])
 def remove_from_cart(rowid):
+    user_id = session.get('userID')
     con = sqlite3.connect("Tuckshop.db", timeout=10)
     cur = con.cursor()
-    cur.execute('DELETE FROM Cart WHERE rowid = ?', (rowid,))
+    cur.execute('DELETE FROM Cart WHERE rowid = ? AND UserID = ?', (rowid, user_id))
     con.commit()
     con.close()
     return redirect('/cart')
@@ -145,9 +146,10 @@ def remove_from_cart(rowid):
 
 @app.route('/clear_cart', methods=['POST'])
 def clear_cart():
+    user_id = session.get('userID')
     con = sqlite3.connect("Tuckshop.db", timeout=10)
     cur = con.cursor()
-    cur.execute('DELETE FROM Cart')
+    cur.execute('DELETE FROM Cart WHERE UserID = ?', (user_id,))
     con.commit()
     con.close()
     return redirect('/cart')
@@ -213,13 +215,11 @@ def checkout():
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    cur.execute('SELECT Item, Quantity, Price FROM Cart')
+    cur.execute('SELECT Item, Quantity, Price FROM Cart WHERE UserID = ?', (user_id,))
     cart_items = cur.fetchall()
 
-    # Calculate total
     total = sum(round(item['Price'] * item['Quantity'], 2) for item in cart_items)
 
-    # Check balance
     cur.execute('SELECT Balance FROM User WHERE UserID = ?', (user_id,))
     user = cur.fetchone()
     balance = user['Balance'] if user else 0.0
@@ -228,7 +228,6 @@ def checkout():
         con.close()
         return redirect('/cart?error=insufficient')
 
-    # Get next OrderID
     cur.execute('SELECT MAX(OrderID) FROM Orders')
     result = cur.fetchone()[0]
     next_order_id = (result + 1) if result else 1
@@ -248,10 +247,8 @@ def checkout():
             order_type
         ))
 
-    # Subtract total from balance
     cur.execute('UPDATE User SET Balance = Balance - ? WHERE UserID = ?', (total, user_id))
-
-    cur.execute('DELETE FROM Cart')
+    cur.execute('DELETE FROM Cart WHERE UserID = ?', (user_id,))
     con.commit()
     con.close()
 
@@ -295,6 +292,7 @@ def orders():
 
     return render_template('orders.html', orders=orders_dict)
 
+
 @app.route('/get_dietaries')
 def get_dietaries():
     con = sqlite3.connect("Tuckshop.db", timeout=10)
@@ -314,6 +312,7 @@ def get_dietaries():
         }
     return jsonify(result)
 
+
 @app.route('/dietary/<filter>')
 def dietary(filter):
     valid = ['Vegan', 'Vegetarian', 'GlutenFree', 'NutFree', 'DairyFree']
@@ -331,10 +330,11 @@ def dietary(filter):
     con.close()
     return render_template('products.html', Menu=data, active_category=None, active_dietary=filter)
 
+
 @app.route('/register')
 def register():
     return render_template('register.html', title='Register')
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', str=5000, debug=True)
