@@ -29,6 +29,7 @@
            data-price="{{ product.Price }}"
            data-bs-toggle="modal"
            data-bs-target="#productModal">
+        <div class="dietary-icons" id="dietary-{{ product.ItemID }}"></div>
         <img src="/static/images/{{product.Name}}.jpg" class="card-img-top" alt="{{product.Name}}">
         <div class="card-body">
           <h5 class="card-title">{{product.Name}}</h5>
@@ -136,6 +137,31 @@
           a.textContent = cat;
           a.className = 'btn btn-sm btn-category' + (activeCategory === cat ? ' active' : '');
           container.appendChild(a);
+        });
+      });
+
+    fetch('/get_dietaries')
+      .then(res => res.json())
+      .then(dietaries => {
+        Object.entries(dietaries).forEach(([itemID, info]) => {
+          const container = document.getElementById('dietary-' + itemID);
+          if (!container) return;
+          const badges = [
+            { key: 'Vegan',      label: 'V'  },
+            { key: 'Vegetarian', label: 'VG' },
+            { key: 'GlutenFree', label: 'GF' },
+            { key: 'NutFree',    label: 'NF' },
+            { key: 'DairyFree',  label: 'DF' },
+          ];
+          badges.forEach(b => {
+            if (info[b.key]) {
+              const span = document.createElement('span');
+              span.className = 'dietary-badge';
+              span.textContent = b.label;
+              span.title = b.key.replace(/([A-Z])/g, ' $1').trim();
+              container.appendChild(span);
+            }
+          });
         });
       });
 

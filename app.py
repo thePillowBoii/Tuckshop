@@ -18,7 +18,7 @@ def login():
     username = request.form['userID']
     password = request.form['password']
 
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('SELECT * FROM User WHERE UserID = ? AND Password = ?', (username, password))
@@ -34,7 +34,7 @@ def login():
 
 @app.route('/products', methods=['POST', 'GET'])
 def products():
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('SELECT * FROM Menu')
@@ -46,7 +46,7 @@ def products():
 @app.route('/search', methods=['POST', 'GET'])
 def search():
     searchTerm = request.form['search_term']
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('SELECT * FROM Menu WHERE Name LIKE ?', ('%' + searchTerm + '%',))
@@ -57,55 +57,56 @@ def search():
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    data = request.get_json()
-    item_id   = data.get('itemID')
-    quantity  = data.get('quantity', 1)
-    option_id = data.get('optionID', 0)
+    try:
+        data = request.get_json()
+        item_id   = data.get('itemID')
+        quantity  = data.get('quantity', 1)
+        option_id = data.get('optionID', 0)
 
-    con = sqlite3.connect("Tuckshop.db")
-    con.row_factory = sqlite3.Row
-    cur = con.cursor()
+        con = sqlite3.connect("Tuckshop.db", timeout=10)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
 
-    # Get item price
-    cur.execute('SELECT Price FROM Menu WHERE ItemID = ?', (item_id,))
-    item = cur.fetchone()
-    if item is None:
+        cur.execute('SELECT Price FROM Menu WHERE ItemID = ?', (item_id,))
+        item = cur.fetchone()
+        if item is None:
+            con.close()
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+        item_price = item['Price']
+
+        special_id = 0
+        cur.execute('SELECT SpecialID FROM Specials WHERE ItemID = ?', (item_id,))
+        special = cur.fetchone()
+        if special:
+            special_id = special['SpecialID']
+
+        option_price = 0.0
+        if option_id != 0:
+            cur.execute('SELECT Price FROM Options WHERE OptionID = ?', (option_id,))
+            option = cur.fetchone()
+            if option:
+                option_price = option['Price']
+
+        total_price = round(item_price + option_price, 2)
+
+        cur.execute('''
+            INSERT INTO Cart (Item, Quantity, Specials, "Option", Price)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (item_id, quantity, special_id, option_id, total_price))
+
+        con.commit()
         con.close()
-        return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-    item_price = item['Price']
+        return jsonify({'success': True})
 
-    # Get special ID if one exists for this item
-    special_id = 0
-    cur.execute('SELECT SpecialID FROM Specials WHERE ItemID = ?', (item_id,))
-    special = cur.fetchone()
-    if special:
-        special_id = special['SpecialID']
-
-    # Get option price if option selected
-    option_price = 0.0
-    if option_id != 0:
-        cur.execute('SELECT Price FROM Options WHERE OptionID = ?', (option_id,))
-        option = cur.fetchone()
-        if option:
-            option_price = option['Price']
-
-    total_price = round(item_price + option_price, 2)
-
-    cur.execute('''
-        INSERT INTO Cart (Item, Quantity, Specials, "Option", Price)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (item_id, quantity, special_id, option_id, total_price))
-
-    con.commit()
-    con.close()
-
-    return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/cart')
 def cart():
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('''
@@ -127,25 +128,27 @@ def cart():
 
 @app.route('/remove_from_cart/<int:rowid>', methods=['POST'])
 def remove_from_cart(rowid):
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     cur = con.cursor()
     cur.execute('DELETE FROM Cart WHERE rowid = ?', (rowid,))
     con.commit()
     con.close()
     return redirect('/cart')
 
+
 @app.route('/clear_cart', methods=['POST'])
 def clear_cart():
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     cur = con.cursor()
     cur.execute('DELETE FROM Cart')
     con.commit()
     con.close()
     return redirect('/cart')
 
+
 @app.route('/category/<path:category>')
 def category(category):
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('SELECT * FROM Menu WHERE Category = ?', (category,))
@@ -156,26 +159,24 @@ def category(category):
 
 @app.route('/get_categories')
 def get_categories():
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('SELECT DISTINCT Category FROM Menu ORDER BY Category')
     data = [row['Category'] for row in cur.fetchall()]
     con.close()
-    from flask import jsonify
     return jsonify(data)
 
 
 @app.route('/get_options/<int:item_id>')
 def get_options(item_id):
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('SELECT OptionID, OptionName, Price, OptionType FROM Options WHERE ItemID = ?', (item_id,))
     rows = cur.fetchall()
     con.close()
 
-    # Group by OptionType
     grouped = {}
     for row in rows:
         t = row['OptionType']
@@ -188,10 +189,12 @@ def get_options(item_id):
         })
     return jsonify(grouped)
 
+
 @app.route('/signout', methods=['POST', 'GET'])
 def signout():
     session.pop('userID', None)
     return redirect('/')
+
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
@@ -199,20 +202,17 @@ def checkout():
     order_type = request.form.get('orderType')
     user_id = session.get('userID')
 
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    # Get all cart items
     cur.execute('SELECT Item, Quantity, Price FROM Cart')
     cart_items = cur.fetchall()
 
-    # Get next OrderID
     cur.execute('SELECT MAX(OrderID) FROM Orders')
     result = cur.fetchone()[0]
     next_order_id = (result + 1) if result else 1
 
-    # Insert one order row per cart item, all with the same OrderID
     for item in cart_items:
         cur.execute('''
             INSERT INTO Orders (OrderID, User, Date, Price, Item, Quantity, ItemPrice, OrderType)
@@ -228,18 +228,17 @@ def checkout():
             order_type
         ))
 
-    # Clear the cart
     cur.execute('DELETE FROM Cart')
-
     con.commit()
     con.close()
 
     return redirect('/orders')
 
+
 @app.route('/orders')
 def orders():
     user_id = session.get('userID')
-    con = sqlite3.connect("Tuckshop.db")
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     cur.execute('''
@@ -272,6 +271,25 @@ def orders():
         orders_dict[oid]['total'] = round(orders_dict[oid]['total'] + float(row['Price']), 2)
 
     return render_template('orders.html', orders=orders_dict)
+
+@app.route('/get_dietaries')
+def get_dietaries():
+    con = sqlite3.connect("Tuckshop.db", timeout=10)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute('SELECT * FROM Dietaries')
+    rows = cur.fetchall()
+    con.close()
+    result = {}
+    for row in rows:
+        result[row['ItemID']] = {
+            'Vegan': row['Vegan'],
+            'Vegetarian': row['Vegetarian'],
+            'GlutenFree': row['GlutenFree'],
+            'NutFree': row['NutFree'],
+            'DairyFree': row['DairyFree']
+        }
+    return jsonify(result)
 
 @app.route('/register')
 def register():

@@ -126,6 +126,34 @@ body::before {
   }
 }
 
+.dietary-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: #FBA39C;
+  color: white;
+  font-size: 0.6rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.dietary-icons {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  z-index: 10;
+}
+
+.card {
+  position: relative;
+}
+
 .btn {
   background-color: #3A2F8F !important;
   border-color: #3A2F8F !important;
