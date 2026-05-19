@@ -123,9 +123,14 @@ def cart():
 
     cur.execute('SELECT SUM(Price * Quantity) FROM Cart')
     total = cur.fetchone()[0] or 0.0
-    con.close()
 
-    return render_template('cart.html', items=items, total=round(total, 2))
+    user_id = session.get('userID')
+    cur.execute('SELECT Balance FROM User WHERE UserID = ?', (user_id,))
+    user = cur.fetchone()
+    balance = user['Balance'] if user else 0.0
+
+    con.close()
+    return render_template('cart.html', items=items, total=round(total, 2), balance=balance)
 
 
 @app.route('/remove_from_cart/<int:rowid>', methods=['POST'])
@@ -211,6 +216,19 @@ def checkout():
     cur.execute('SELECT Item, Quantity, Price FROM Cart')
     cart_items = cur.fetchall()
 
+    # Calculate total
+    total = sum(round(item['Price'] * item['Quantity'], 2) for item in cart_items)
+
+    # Check balance
+    cur.execute('SELECT Balance FROM User WHERE UserID = ?', (user_id,))
+    user = cur.fetchone()
+    balance = user['Balance'] if user else 0.0
+
+    if balance < total:
+        con.close()
+        return redirect('/cart?error=insufficient')
+
+    # Get next OrderID
     cur.execute('SELECT MAX(OrderID) FROM Orders')
     result = cur.fetchone()[0]
     next_order_id = (result + 1) if result else 1
@@ -229,6 +247,9 @@ def checkout():
             item['Price'],
             order_type
         ))
+
+    # Subtract total from balance
+    cur.execute('UPDATE User SET Balance = Balance - ? WHERE UserID = ?', (total, user_id))
 
     cur.execute('DELETE FROM Cart')
     con.commit()

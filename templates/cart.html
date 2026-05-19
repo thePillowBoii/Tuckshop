@@ -47,6 +47,21 @@
   <a href="/products" class="btn btn-clear">Continue Shopping</a>
 </div>
 
+<!-- Balance display -->
+<div class="d-flex justify-content-between align-items-center mb-3 p-3"
+     style="background-color: #f8f9fa; border-radius: 8px;">
+  <span><strong>Account Balance:</strong></span>
+  <span class="{{ 'text-danger fw-bold' if balance < total else 'fw-bold' }}">
+    ${{ '%.2f' % balance }}
+  </span>
+</div>
+
+{% if request.args.get('error') == 'insufficient' %}
+<div class="alert" style="background-color: #fd8a82; color: white;">
+  Insufficient balance to complete this order. Please top up your account.
+</div>
+{% endif %}
+
 <!-- Order details -->
 <div class="card p-4 mb-4">
   <h5 class="mb-3">Order Details</h5>
