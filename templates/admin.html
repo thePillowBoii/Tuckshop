@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Menu{% endblock %}
+
+{% block content %}
+
+  <h1>Admin - Edit Menu</h1>
+  <div class="mb-3"></div>
+
+  <form action="/search" method="post" class="input-group mb-3 search-form">
+    <input name="search_term" class="form-control" placeholder="Search Products" type="search"> 
+    <button class="btn btn-primary" type="submit">Search</button>
+    <a href="/products" class="btn btn-clear">Clear</a>
+  </form>
+
+  <!-- Category filter buttons -->
+  <div class="mb-3 d-flex flex-wrap gap-2" id="categoryButtons">
+    <a href="/products" class="btn btn-sm btn-category {{ 'active' if not active_category }}">All</a>
+  </div>
+
+  <!-- Dietary filter buttons -->
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="/dietary/Vegan"      class="btn btn-sm btn-category {{ 'active' if active_dietary == 'Vegan' }}">Vegan</a>
+    <a href="/dietary/Vegetarian" class="btn btn-sm btn-category {{ 'active' if active_dietary == 'Vegetarian' }}">Vegetarian</a>
+    <a href="/dietary/GlutenFree" class="btn btn-sm btn-category {{ 'active' if active_dietary == 'GlutenFree' }}">Gluten Free</a>
+    <a href="/dietary/NutFree"    class="btn btn-sm btn-category {{ 'active' if active_dietary == 'NutFree' }}">Nut Free</a>
+    <a href="/dietary/DairyFree"  class="btn btn-sm btn-category {{ 'active' if active_dietary == 'DairyFree' }}">Dairy Free</a>
+  </div>
+
+  <div class="row row-cols-2 row-cols-md-5 g-3 products-row">
+    {% for product in Menu %}
+    <div class="col">
+      <div class="card h-100 product-card"
+           style="cursor: pointer;"
+           data-itemid="{{ product.ItemID }}"
+           data-name="{{ product.Name }}"
+           data-category="{{ product.Category }}"
+           data-price="{{ product.Price }}"
+           data-bs-toggle="modal"
+           data-bs-target="#productModal">
+        <div class="dietary-icons" id="dietary-{{ product.ItemID }}"></div>
+        <img src="/static/images/{{product.Name}}.jpg" class="card-img-top" alt="{{product.Name}}">
+        <div class="card-body">
+          <h5 class="card-title">{{product.Name}}</h5>
+          <p class="card-text">{{product.Category}}</p>
+          <p class="card-text">${{product.Price}} each</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Product Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #fd8a82;">
+          <h5 class="modal-title" id="modalName" style="color: white;"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" class="img-fluid mb-3 rounded" style="max-height: 200px;">
+          <p id="modalCategory"></p>
+          <h4 id="modalPrice"></h4>
+          <div id="optionsContainer" class="mt-3 text-start"></div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary px-3" id="qtyMinus">−</button>
+            <input type="number" id="qtyInput" value="1" min="1"
+                   class="form-control text-center"
+                   style="width: 70px; color: #3A2F8F;">
+            <button type="button" class="btn btn-primary px-3" id="qtyPlus">+</button>
+          </div>
+          <button type="button" class="btn btn-primary" id="btnAdd">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentItemID = null;
+    let basePrice = 0;
+
+    document.querySelectorAll('.product-card').forEach(card => {
+      card.addEventListener('click', () => {
+        currentItemID = card.dataset.itemid;
+        basePrice = parseFloat(card.dataset.price);
+        document.getElementById('modalName').textContent = card.dataset.name;
+        document.getElementById('modalCategory').textContent = card.dataset.category;
+        document.getElementById('modalPrice').textContent = '$' + card.dataset.price + ' each';
+        document.getElementById('modalImage').src = '/static/images/' + card.dataset.name + '.jpg';
+        document.getElementById('qtyInput').value = 1;
+
+        const optionsContainer = document.getElementById('optionsContainer');
+        optionsContainer.innerHTML = '';
+
+        fetch('/get_options/' + currentItemID)
+          .then(res => res.json())
+          .then(grouped => {
+            Object.entries(grouped).forEach(([type, options]) => {
+              const label = document.createElement('label');
+              label.className = 'form-label mt-2';
+              label.textContent = type;
+
+              const select = document.createElement('select');
+              select.className = 'form-select mb-2 option-select';
+              select.dataset.type = type;
+
+              const none = document.createElement('option');
+              none.value = '0';
+              none.textContent = 'No ' + type;
+              none.dataset.price = '0';
+              if (type !== 'Bread') {
+                select.appendChild(none);
+              }
+
+              options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt.OptionID;
+                o.textContent = opt.OptionName + (opt.Price > 0 ? ' (+$' + opt.Price.toFixed(2) + ')' : '');
+                o.dataset.price = opt.Price;
+                if (type === 'Bread' && opt.OptionName === 'White Bread') {
+                  o.selected = true;
+                }
+                select.appendChild(o);
+              });
+
+              select.addEventListener('change', updatePrice);
+              optionsContainer.appendChild(label);
+              optionsContainer.appendChild(select);
+            });
+            updatePrice();
+          });
+      });
+    });
+
+    fetch('/get_categories')
+      .then(res => res.json())
+      .then(categories => {
+        const container = document.getElementById('categoryButtons');
+        const activeCategory = decodeURIComponent("{{ active_category | urlencode }}");
+        categories.forEach(cat => {
+          const a = document.createElement('a');
+          a.href = '/category/' + encodeURIComponent(cat);
+          a.textContent = cat;
+          a.className = 'btn btn-sm btn-category' + (activeCategory === cat ? ' active' : '');
+          container.appendChild(a);
+        });
+      });
+
+    fetch('/get_dietaries')
+      .then(res => res.json())
+      .then(dietaries => {
+        Object.entries(dietaries).forEach(([itemID, info]) => {
+          const container = document.getElementById('dietary-' + itemID);
+          if (!container) return;
+          const badges = [
+            { key: 'Vegan',      label: 'V'  },
+            { key: 'Vegetarian', label: 'VG' },
+            { key: 'GlutenFree', label: 'GF' },
+            { key: 'NutFree',    label: 'NF' },
+            { key: 'DairyFree',  label: 'DF' },
+          ];
+          badges.forEach(b => {
+            if (info[b.key]) {
+              const span = document.createElement('span');
+              span.className = 'dietary-badge';
+              span.textContent = b.label;
+              span.title = b.key.replace(/([A-Z])/g, ' $1').trim();
+              container.appendChild(span);
+            }
+          });
+        });
+      });
+
+    function updatePrice() {
+      let extraPrice = 0;
+      document.querySelectorAll('.option-select').forEach(sel => {
+        const selected = sel.selectedOptions[0];
+        if (selected && selected.dataset.price) {
+          extraPrice += parseFloat(selected.dataset.price);
+        }
+      });
+      document.getElementById('modalPrice').textContent = '$' + (basePrice + extraPrice).toFixed(2) + ' each';
+    }
+
+    document.getElementById('qtyMinus').addEventListener('click', () => {
+      const input = document.getElementById('qtyInput');
+      if (parseInt(input.value) > 1) input.value = parseInt(input.value) - 1;
+    });
+
+    document.getElementById('qtyPlus').addEventListener('click', () => {
+      const input = document.getElementById('qtyInput');
+      input.value = parseInt(input.value) + 1;
+    });
+
+    document.getElementById('btnAdd').addEventListener('click', () => {
+      const quantity = parseInt(document.getElementById('qtyInput').value);
+      const selectedOptions = [];
+      document.querySelectorAll('.option-select').forEach(sel => {
+        if (sel.value !== '0') selectedOptions.push(parseInt(sel.value));
+      });
+      const optionID = selectedOptions.length > 0 ? selectedOptions[0] : 0;
+      fetch('/add_to_cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemID: currentItemID, quantity: quantity, optionID: optionID })
+      }).then(res => res.json()).then(data => {
+        if (data.success) {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('productModal'));
+          modal.hide();
+        } else {
+          alert('Error: ' + data.error);
+        }
+      }).catch(err => alert('Request failed: ' + err));
+    });
+  </script>
+
+{% endblock %}
